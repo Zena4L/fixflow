@@ -77,6 +77,11 @@ GEM
       securerandom (>= 0.3)
       tzinfo (~> 2.0, >= 2.0.5)
       uri (>= 0.13.1)
+    actual_db_schema (0.10.0)
+      activerecord
+      activesupport
+      csv
+      prism
     addressable (2.9.0)
       public_suffix (>= 2.0.2, < 8.0)
     annotated (0.1.1)
@@ -498,6 +503,7 @@ PLATFORMS
   x86_64-linux-musl
 
 DEPENDENCIES
+  actual_db_schema (~> 0.10.0)
   annotated (~> 0.1.1)
   bootsnap
   brakeman
