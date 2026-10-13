@@ -5,5 +5,7 @@ Plutonium.configure do |config|
 
   # Shell variant: :modern (icon rail), :plain (no rail), or :classic (legacy).
   config.shell = :modern
+  config.assets.stylesheet = "application"
+  config.assets.script = "application"
   # Configure plutonium above.
 end
