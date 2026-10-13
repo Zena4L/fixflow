@@ -37,7 +37,7 @@ class User < ResourceRecord
 
   # add scopes above.
 
-  validates :email, presence: true
+  validates :email, presence: true, uniqueness: {conditions: -> { where(status: %i[unverified verified]) }}
   validates :name, length: {maximum: 100}
   # add validations above.
 
@@ -45,6 +45,8 @@ class User < ResourceRecord
 
   # add delegations above.
 
+  # Matches Rodauth's case_insensitive_login, which downcases submitted logins.
+  normalizes :email, with: ->(email) { email.strip.downcase }
   # add misc attribute macros above.
 
   def to_label

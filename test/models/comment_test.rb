@@ -47,9 +47,9 @@ class CommentTest < ActiveSupport::TestCase
     now = Time.current
     base = {service_request_id: @request.id, body: "x", created_at: now, updated_at: now}
 
-    assert_raises(ActiveRecord::CheckViolation) { Comment.insert_all!([base]) }
+    assert_raises(ActiveRecord::CheckViolation) { savepoint { Comment.insert_all!([base]) } }
     assert_raises(ActiveRecord::CheckViolation) do
-      Comment.insert_all!([base.merge(user_id: @requester.id, internal: true)])
+      savepoint { Comment.insert_all!([base.merge(user_id: @requester.id, internal: true)]) }
     end
   end
 end

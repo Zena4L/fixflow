@@ -12,7 +12,7 @@ class StaffMemberRodauthPlugin < RodauthPlugin
     # http://rodauth.jeremyevans.net/documentation.html
 
     # List of authentication features that are loaded.
-    enable :login, :remember, :logout, :reset_password, :reset_password_notify, :change_login, :verify_login_change, :change_password, :change_password_notify, :case_insensitive_login, :internal_request
+    enable :login, :remember, :logout, :reset_password, :reset_password_notify, :change_login, :verify_login_change, :change_password, :change_password_notify, :case_insensitive_login, :internal_request, :lockout
 
     # ==> General
 
@@ -24,6 +24,8 @@ class StaffMemberRodauthPlugin < RodauthPlugin
     remember_table :staff_member_remember_keys
     reset_password_table :staff_member_password_reset_keys
     verify_login_change_table :staff_member_login_change_keys
+    account_login_failures_table :staff_member_login_failures
+    account_lockouts_table :staff_member_lockouts
 
     # The secret key used for hashing public-facing tokens for various features.
     # Defaults to Rails `secret_key_base`, but you can use your own secret key.
@@ -71,6 +73,10 @@ class StaffMemberRodauthPlugin < RodauthPlugin
 
     create_verify_login_change_email do |_login|
       Rodauth::StaffMemberMailer.verify_login_change(self.class.configuration_name, account_id, verify_login_change_key_value)
+    end
+
+    create_unlock_account_email do
+      Rodauth::StaffMemberMailer.unlock_account(self.class.configuration_name, account_id, unlock_account_key_value)
     end
 
     create_password_changed_email do
@@ -127,6 +133,16 @@ class StaffMemberRodauthPlugin < RodauthPlugin
     # bcrypt has a maximum input length of 72 bytes, truncating any extra bytes.
     password_maximum_bytes 72 if respond_to?(:password_maximum_bytes)
 
+    # ==> Lockout
+    # Lock an account after repeated wrong passwords, against guessing one
+    # account's password. It unlocks after the deadline or from the emailed
+    # link. RodauthController#rate_limit covers attempts spread across accounts.
+    max_invalid_logins 10
+    account_lockouts_deadline_interval({hours: 1})
+    # Unlocking would otherwise sign the account in, skipping before_login
+    # (and with it the deactivated-staff check).
+    unlock_account_autologin? false
+
     # ==> Remember Feature
 
     # Only remember users who ticked the "Remember Me" checkbox on the login form.
@@ -134,7 +150,21 @@ class StaffMemberRodauthPlugin < RodauthPlugin
 
     # Deactivated staff cannot sign in (StaffPortal also ends live sessions).
     before_login do
+      reject_deactivated_staff unless StaffMember.find(account_id).active?
+    end
+
+    # ...nor be signed back in by a "Remember me" cookie, which skips
+    # before_login. Drop the cookie and its key so it is not retried.
+    before_load_memory do
       unless StaffMember.find(account_id).active?
+        remove_remember_key
+        forget_login
+        reject_deactivated_staff
+      end
+    end
+
+    auth_class_eval do
+      def reject_deactivated_staff
         set_redirect_error_flash "This staff account has been deactivated."
         redirect login_path
       end

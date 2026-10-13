@@ -45,7 +45,8 @@ class StaffMember < ResourceRecord
   scope :active, -> { where(active: true) }
   # add scopes above.
 
-  validates :email, presence: true
+  validates :email, presence: true, format: {with: URI::MailTo::EMAIL_REGEXP, allow_blank: true},
+    uniqueness: {conditions: -> { where(status: %i[unverified verified]) }}
   validates :name, presence: true, length: {maximum: 100}
   # add validations above.
 
@@ -53,6 +54,9 @@ class StaffMember < ResourceRecord
 
   # add delegations above.
 
+  # Rodauth's case_insensitive_login downcases the submitted login and expects
+  # stored logins to be lowercase already; admins type staff emails by hand.
+  normalizes :email, with: ->(email) { email.strip.downcase }
   # add misc attribute macros above.
 
   def to_label

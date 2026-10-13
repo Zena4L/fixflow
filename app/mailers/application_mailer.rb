@@ -1,4 +1,5 @@
 class ApplicationMailer < ActionMailer::Base
-  default from: "from@example.com"
+  # Set MAIL_FROM to an address your SMTP provider has verified.
+  default from: ENV.fetch("MAIL_FROM", "FixFlow <no-reply@fixflow.test>")
   layout "mailer"
 end

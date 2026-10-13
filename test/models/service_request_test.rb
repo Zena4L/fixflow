@@ -149,8 +149,10 @@ class ServiceRequestTest < ActiveSupport::TestCase
   test "the database rejects out-of-range statuses and priorities" do
     request = create_request!(requester: @requester)
 
-    assert_raises(ActiveRecord::CheckViolation) { request.update_column(:status, 99) }
-    assert_raises(ActiveRecord::CheckViolation) { request.update_column(:priority, 99) }
+    # Each violation gets its own savepoint: Postgres aborts the enclosing
+    # transaction after an error, SQLite does not.
+    assert_raises(ActiveRecord::CheckViolation) { savepoint { request.update_column(:status, 99) } }
+    assert_raises(ActiveRecord::CheckViolation) { savepoint { request.update_column(:priority, 99) } }
   end
 
   test "deleting a request removes its comments and activity" do

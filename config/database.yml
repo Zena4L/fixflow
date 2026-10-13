@@ -22,19 +22,15 @@ test:
 
 # Store production database in the storage/ directory, which by default
 # is mounted as a persistent Docker volume in config/deploy.yml.
+# Production runs on PostgreSQL (Neon on Vercel). Vercel's containers are
+# stateless, so the SQLite files used in development/test would be lost.
+# DATABASE_URL is the pooled Neon URL; bin/docker-entrypoint migrates through
+# DATABASE_URL_UNPOOLED, because migrations need session-level advisory locks.
 production:
   primary:
-    <<: *default
-    database: storage/production.sqlite3
-  cache:
-    <<: *default
-    database: storage/production_cache.sqlite3
-    migrations_paths: db/cache_migrate
-  queue:
-    <<: *default
-    database: storage/production_queue.sqlite3
-    migrations_paths: db/queue_migrate
-  cable:
-    <<: *default
-    database: storage/production_cable.sqlite3
-    migrations_paths: db/cable_migrate
+    adapter: postgresql
+    encoding: unicode
+    url: <%= ENV["DATABASE_URL"] %>
+    max_connections: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+    # Neon's pooler (PgBouncer, transaction mode) cannot keep prepared statements.
+    prepared_statements: false

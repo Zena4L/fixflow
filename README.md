@@ -17,7 +17,8 @@ A lightweight request / issue tracker. **Requesters** raise requests and follow 
 - **Assignment** to active staff, **comments** (staff can post internal notes that requesters never see), and an append-only **activity log** of every change and who made it.
 - **Staff queue**: search (title, description, or reference such as `FF-00042`), filters (status, priority, assignee, requester, created date), quick scopes (Active, Submitted, Unassigned, Mine, Urgent), sortable columns and pagination. Overview dashboard with queue metrics and charts.
 - **Editing / deletion rules**: requesters edit or delete their own request only while it is *Submitted*; staff edit anything not closed; only admins delete. Closed requests are read-only. Comments and activity entries are immutable.
-- Staff roles: **admin** (manages staff, deletes requests) and **agent**. Deactivated staff are signed out immediately and cannot sign back in.
+- Staff roles: **admin** (manages staff, deletes requests) and **agent**. Deactivated staff are signed out on their next request and cannot sign back in, including through a "Remember me" cookie.
+- **Brute-force protection**: an account locks for an hour after 10 wrong passwords (or until unlocked from the emailed link), and sign-in and email-sending forms are rate limited per IP.
 
 All rules are enforced on the server (policies, model validations and database constraints), not just hidden in the UI.
 
@@ -101,7 +102,7 @@ More detail and the reasoning behind choices: [`docs/decisions.md`](docs/decisio
 
 ## Testing
 
-`bin/rails test` runs 92 tests (Minitest, using `Plutonium::Testing`):
+`bin/rails test` runs 115 tests (Minitest, using `Plutonium::Testing`):
 
 - `test/models` — every legal and illegal transition, validations, DB constraints, activity log.
 - `test/policies` — permission matrices per portal × role × status.
@@ -110,5 +111,5 @@ More detail and the reasoning behind choices: [`docs/decisions.md`](docs/decisio
 
 ## Configuration
 
-- `.env` holds non-secret defaults (`RAILS_DEFAULT_URL`); put secrets in `.env.local` (git-ignored).
+- `.env` (git-ignored) holds non-secret defaults such as `RAILS_DEFAULT_URL`; `bin/setup` creates it from `.env.template` if missing. Put secrets in `.env.local` (also git-ignored).
 - Production uses the Rails 8 defaults (Solid Queue/Cache/Cable, Kamal `Dockerfile`); deployment and SMTP delivery are **not configured** yet.

@@ -26,6 +26,10 @@ module FactoryHelpers
     advance!(request, to: status, staff: staff || create_staff!)
   end
 
+  # Runs the block in a nested transaction so an expected database error does
+  # not poison the test's transaction (Postgres aborts it; SQLite does not).
+  def savepoint(&) = ActiveRecord::Base.transaction(requires_new: true, &)
+
   def advance!(request, to:, staff:)
     path = {
       submitted: [],

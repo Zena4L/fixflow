@@ -12,7 +12,7 @@ class UserRodauthPlugin < RodauthPlugin
     # http://rodauth.jeremyevans.net/documentation.html
 
     # List of authentication features that are loaded.
-    enable :login, :remember, :logout, :create_account, :verify_account, :verify_account_grace_period, :reset_password, :reset_password_notify, :change_login, :verify_login_change, :change_password, :change_password_notify, :case_insensitive_login, :internal_request
+    enable :login, :remember, :logout, :create_account, :verify_account, :verify_account_grace_period, :reset_password, :reset_password_notify, :change_login, :verify_login_change, :change_password, :change_password_notify, :case_insensitive_login, :internal_request, :lockout
 
     # ==> General
 
@@ -25,6 +25,8 @@ class UserRodauthPlugin < RodauthPlugin
     reset_password_table :user_password_reset_keys
     verify_account_table :user_verification_keys
     verify_login_change_table :user_login_change_keys
+    account_login_failures_table :user_login_failures
+    account_lockouts_table :user_lockouts
 
     # The secret key used for hashing public-facing tokens for various features.
     # Defaults to Rails `secret_key_base`, but you can use your own secret key.
@@ -81,6 +83,10 @@ class UserRodauthPlugin < RodauthPlugin
       Rodauth::UserMailer.verify_login_change(self.class.configuration_name, account_id, verify_login_change_key_value)
     end
 
+    create_unlock_account_email do
+      Rodauth::UserMailer.unlock_account(self.class.configuration_name, account_id, unlock_account_key_value)
+    end
+
     create_password_changed_email do
       Rodauth::UserMailer.change_password_notify(self.class.configuration_name, account_id)
     end
@@ -134,6 +140,13 @@ class UserRodauthPlugin < RodauthPlugin
 
     # bcrypt has a maximum input length of 72 bytes, truncating any extra bytes.
     password_maximum_bytes 72 if respond_to?(:password_maximum_bytes)
+
+    # ==> Lockout
+    # Lock an account after repeated wrong passwords, against guessing one
+    # account's password. It unlocks after the deadline or from the emailed
+    # link. RodauthController#rate_limit covers attempts spread across accounts.
+    max_invalid_logins 10
+    account_lockouts_deadline_interval({hours: 1})
 
     # ==> Remember Feature
 

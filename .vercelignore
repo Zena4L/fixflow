@@ -1,0 +1,24 @@
+# Files never uploaded by `vercel deploy`. Secrets first.
+/config/master.key
+/config/credentials/*.key
+/.env*
+!/.env
+!/.env.template
+
+# Local state and build output (rebuilt inside Dockerfile.vercel).
+/.git
+/.bundle
+/log/*
+/tmp/*
+/storage/*
+/node_modules
+/app/assets/builds/*
+!/app/assets/builds/.keep
+/public/assets
+/coverage
+
+# Not needed by the image.
+/.claude
+/.github
+/.kamal
+/.vercel

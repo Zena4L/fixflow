@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_10_13_141354) do
+ActiveRecord::Schema[8.1].define(version: 2026_10_13_152329) do
   create_table "activities", force: :cascade do |t|
     t.integer "service_request_id", null: false
     t.string "kind", null: false
@@ -65,10 +65,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_13_141354) do
     t.check_constraint "status BETWEEN 0 AND 4", name: "service_requests_status_valid"
   end
 
+  create_table "staff_member_lockouts", force: :cascade do |t|
+    t.string "key", null: false
+    t.datetime "deadline", null: false
+    t.datetime "email_last_sent"
+  end
+
   create_table "staff_member_login_change_keys", force: :cascade do |t|
     t.string "key", null: false
     t.string "login", null: false
     t.datetime "deadline", null: false
+  end
+
+  create_table "staff_member_login_failures", force: :cascade do |t|
+    t.integer "number", default: 1, null: false
   end
 
   create_table "staff_member_password_reset_keys", force: :cascade do |t|
@@ -95,10 +105,20 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_13_141354) do
     t.check_constraint "role IN (0, 1)", name: "staff_members_role_valid"
   end
 
+  create_table "user_lockouts", force: :cascade do |t|
+    t.string "key", null: false
+    t.datetime "deadline", null: false
+    t.datetime "email_last_sent"
+  end
+
   create_table "user_login_change_keys", force: :cascade do |t|
     t.string "key", null: false
     t.string "login", null: false
     t.datetime "deadline", null: false
+  end
+
+  create_table "user_login_failures", force: :cascade do |t|
+    t.integer "number", default: 1, null: false
   end
 
   create_table "user_password_reset_keys", force: :cascade do |t|
@@ -136,10 +156,14 @@ ActiveRecord::Schema[8.1].define(version: 2026_10_13_141354) do
   add_foreign_key "comments", "users"
   add_foreign_key "service_requests", "staff_members", column: "assignee_id"
   add_foreign_key "service_requests", "users", column: "requester_id"
+  add_foreign_key "staff_member_lockouts", "staff_members", column: "id"
   add_foreign_key "staff_member_login_change_keys", "staff_members", column: "id"
+  add_foreign_key "staff_member_login_failures", "staff_members", column: "id"
   add_foreign_key "staff_member_password_reset_keys", "staff_members", column: "id"
   add_foreign_key "staff_member_remember_keys", "staff_members", column: "id"
+  add_foreign_key "user_lockouts", "users", column: "id"
   add_foreign_key "user_login_change_keys", "users", column: "id"
+  add_foreign_key "user_login_failures", "users", column: "id"
   add_foreign_key "user_password_reset_keys", "users", column: "id"
   add_foreign_key "user_remember_keys", "users", column: "id"
   add_foreign_key "user_verification_keys", "users", column: "id"

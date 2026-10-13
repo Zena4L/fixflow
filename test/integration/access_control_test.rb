@@ -33,16 +33,29 @@ class AccessControlTest < ActionDispatch::IntegrationTest
     assert_response :not_found
   end
 
-  test "deactivated staff are signed out and cannot sign back in" do
+  # StaffPortal::Concerns::Controller#reject_deactivated_staff
+  test "deactivating a staff member ends their open session" do
     login_as(@agent, portal: :staff)
     @agent.update!(active: false)
 
     get "/staff/service_requests"
     assert_redirected_to "/staff_members/login"
+    assert_equal "Your staff account has been deactivated.", flash[:alert]
+  end
+
+  # StaffMemberRodauthPlugin's before_login. Asserts on the login response
+  # itself: the portal check above would also bounce a later page visit, so
+  # checking only that would pass even if login were not refused.
+  test "deactivated staff cannot sign in" do
+    @agent.update!(active: false)
 
     post "/staff_members/login", params: {email: @agent.email, password: FactoryHelpers::PASSWORD}
-    get "/staff/service_requests"
     assert_redirected_to "/staff_members/login"
+    assert_equal "This staff account has been deactivated.", flash[:alert]
+
+    reset! # fresh session: next user signs in from scratch
+    post "/staff_members/login", params: {email: @admin.email, password: FactoryHelpers::PASSWORD}
+    assert_redirected_to "/staff", "an active staff member signs in normally"
   end
 
   # --- Requester isolation ---------------------------------------------------
@@ -90,6 +103,36 @@ class AccessControlTest < ActionDispatch::IntegrationTest
 
     get "/requester/service_requests/#{request.id}/nested_activities"
     assert_not_includes response.body, "internal note"
+  end
+
+  # Plutonium's typeahead endpoint accepts any association name on the resource
+  # and scopes the target through the portal's policy for that class.
+  test "requesters cannot list accounts through association typeahead" do
+    create_requester!(name: "Victim Person", email: "victim@example.test")
+    login_as(@requester, portal: :requester)
+
+    %w[
+      /requester/comments/typeahead/input/user
+      /requester/comments/typeahead/input/staff_member
+      /requester/activities/typeahead/input/user
+      /requester/activities/typeahead/input/staff_member
+      /requester/service_requests/typeahead/input/requester
+      /requester/service_requests/typeahead/input/assignee
+    ].each do |path|
+      get path
+      assert_response :success
+      assert_empty response.parsed_body["results"], "#{path} leaked accounts"
+    end
+  end
+
+  test "staff can still look up staff and requesters through typeahead" do
+    login_as(@agent, portal: :staff)
+
+    get "/staff/service_requests/typeahead/filter/assignee", params: {q: @admin.name}
+    assert_includes response.parsed_body["results"].pluck("label"), @admin.name
+
+    get "/staff/service_requests/typeahead/filter/requester", params: {q: @requester.name}
+    assert_includes response.parsed_body["results"].pluck("label"), @requester.name
   end
 
   # --- Mass-assignment / forged params ----------------------------------------
@@ -248,5 +291,28 @@ class AccessControlTest < ActionDispatch::IntegrationTest
       post "/staff/staff_members", params:
     end
     assert_predicate StaffMember.find_by(email: "new@example.test"), :verified?
+  end
+
+  test "a duplicate staff email is a validation error, not a crash" do
+    login_as(@admin, portal: :staff)
+
+    assert_no_difference -> { StaffMember.count } do
+      post "/staff/staff_members", params: {staff_member: {name: "Dup", email: @agent.email.upcase, role: "agent", active: "1"}}
+    end
+    assert_response :unprocessable_content
+
+    patch "/staff/staff_members/#{@agent.id}", params: {staff_member: {email: @admin.email}}
+    assert_response :unprocessable_content
+    assert_not_equal @admin.email, @agent.reload.email
+  end
+
+  test "staff added with a mixed-case email can sign in" do
+    login_as(@admin, portal: :staff)
+    post "/staff/staff_members", params: {staff_member: {name: "Casey", email: "  Casey.Case@Example.TEST ", role: "agent", active: "1"}}
+    StaffMember.find_by!(email: "casey.case@example.test").update!(password: FactoryHelpers::PASSWORD)
+
+    reset! # fresh session: next user signs in from scratch
+    post "/staff_members/login", params: {email: "Casey.Case@example.test", password: FactoryHelpers::PASSWORD}
+    assert_redirected_to "/staff"
   end
 end

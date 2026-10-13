@@ -18,7 +18,9 @@ class ServiceRequestDefinition < ::ResourceDefinition
   search do |scope, query|
     term = query.to_s.strip
     like = "%#{ActiveRecord::Base.sanitize_sql_like(term)}%"
-    matches = scope.where("service_requests.title LIKE :q OR service_requests.description LIKE :q", q: like)
+    # Arel#matches is case-insensitive on both SQLite (LIKE) and Postgres (ILIKE).
+    table = ServiceRequest.arel_table
+    matches = scope.where(table[:title].matches(like).or(table[:description].matches(like)))
     id = term[/\A(?:#{ServiceRequest::REFERENCE_PREFIX})?0*(\d+)\z/io, 1]
     id ? matches.or(scope.where(id: id.to_i)) : matches
   end

@@ -12,13 +12,10 @@ class RodauthApp < Rodauth::Rails::App
     r.rodauth(:user)
 
     # plugin route configuration
-    if r.path.start_with?("/staff_member_dashboard")
-      rodauth(:staff_member).load_memory # autologin remembered staff_members
-    end
-    if r.path.start_with?("/user_dashboard")
-      rodauth(:user).load_memory # autologin remembered users
-    end
-    # rodauth.load_memory # autologin remembered users
+    # Autologin from the "Remember me" cookie, but only on the portal that
+    # account type uses (whole path segments, so "/staff" is not "/staff_x").
+    rodauth(:staff_member).load_memory if portal_path?(r.path, "/staff")
+    rodauth(:user).load_memory if portal_path?(r.path, "/requester")
 
     # ==> Authenticating requests
     # Call `rodauth.require_account` for requests that you want to
@@ -29,4 +26,8 @@ class RodauthApp < Rodauth::Rails::App
     #   rodauth.require_account
     # end
   end
+
+  private
+
+  def portal_path?(path, mount) = path == mount || path.start_with?("#{mount}/")
 end
