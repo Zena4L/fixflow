@@ -112,4 +112,28 @@ More detail and the reasoning behind choices: [`docs/decisions.md`](docs/decisio
 ## Configuration
 
 - `.env` (git-ignored) holds non-secret defaults such as `RAILS_DEFAULT_URL`; `bin/setup` creates it from `.env.template` if missing. Put secrets in `.env.local` (also git-ignored).
-- Production uses the Rails 8 defaults (Solid Queue/Cache/Cable, Kamal `Dockerfile`); deployment and SMTP delivery are **not configured** yet.
+- Production runs on PostgreSQL (`DATABASE_URL`), with inline jobs and an in-memory cache. See **Deployment**.
+
+## Deployment (Vercel + Neon Postgres)
+
+FixFlow runs on Vercel's Container Runtime (beta) from `Dockerfile.vercel`, with a Neon Postgres database. Vercel containers are stateless (no disk, no worker processes), which is why production uses Postgres and runs jobs inline.
+
+Live: <https://fixflow-eosin-kappa.vercel.app>
+
+One-time setup (already done for this project):
+
+1. `npm i -g vercel && vercel login`, then `vercel link --project fixflow`.
+2. Vercel dashboard → project → **Storage → Create Database → Neon** (Free), connected to Production and Preview. This adds `DATABASE_URL` and `DATABASE_URL_UNPOOLED`.
+3. Environment variables (Production, and Preview where noted):
+
+   | Variable | Value |
+   |---|---|
+   | `RAILS_MASTER_KEY` | contents of `config/master.key` (sensitive; Production + Preview) |
+   | `PORT` | `8080` (Production + Preview) |
+   | `RAILS_DEFAULT_URL` | the public URL, e.g. `https://fixflow-eosin-kappa.vercel.app` |
+   | `ADMIN_EMAIL`, `ADMIN_PASSWORD` | first staff admin, created at boot only if no admin exists (sensitive; remove after first sign-in) |
+   | `MAIL_FROM`, `SMTP_ADDRESS`, `SMTP_PORT`, `SMTP_USERNAME`, `SMTP_PASSWORD` | optional SMTP for verification/reset emails |
+
+4. Deploy: `vercel deploy --prod` (or connect the GitHub repo with `vercel git connect` to deploy on every push).
+
+On every cold start `bin/docker-entrypoint` runs `db:prepare` (through `DATABASE_URL_UNPOOLED`) and `fixflow:bootstrap_admin`. Expect a ~10 s first request after 5 idle minutes. `.vercelignore` keeps `master.key` and `.env*` out of uploads.
