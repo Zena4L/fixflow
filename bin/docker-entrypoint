@@ -4,7 +4,9 @@
 # Migrations take advisory locks, which a transaction-mode pooler (Neon's
 # pooled URL) does not support, so prefer the direct connection when given.
 if [ "${@: -2:1}" == "./bin/rails" ] && [ "${@: -1:1}" == "server" ]; then
-  DATABASE_URL="${DATABASE_URL_UNPOOLED:-$DATABASE_URL}" ./bin/rails db:prepare
+  # fixflow:bootstrap_admin creates the first admin from ADMIN_EMAIL /
+  # ADMIN_PASSWORD when no admin exists yet (a no-op otherwise).
+  DATABASE_URL="${DATABASE_URL_UNPOOLED:-$DATABASE_URL}" ./bin/rails db:prepare fixflow:bootstrap_admin
 fi
 
 exec "${@}"
