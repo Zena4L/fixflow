@@ -1,6 +1,11 @@
 # Demo data for local development. Idempotent: safe to run repeatedly.
 # Never run against production — the demo password is public.
-abort "Refusing to seed demo accounts in production." if Rails.env.production?
+# `db:prepare` runs this file whenever it creates a database, including on a
+# fresh production database at container boot, so skip without failing.
+if Rails.env.production?
+  puts "Skipping demo seeds in production (create staff with fixflow:create_admin)."
+  return
+end
 
 DEMO_PASSWORD = "password123"
 

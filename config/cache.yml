@@ -11,6 +11,7 @@ development:
 test:
   <<: *default
 
+# Production uses :memory_store (see production.rb). Solid Cache's model is
+# still eager-loaded, so it must not point at a database that isn't configured.
 production:
-  database: cache
   <<: *default
