@@ -3,7 +3,7 @@
 CI.run do
   step "Setup", "bin/setup --skip-server"
 
-  step "Style: Ruby", "bin/rubocop"
+  step "Style: Ruby", "bundle exec standardrb"
 
   step "Security: Gem audit", "bin/bundler-audit"
   step "Security: Yarn vulnerability audit", "yarn audit"

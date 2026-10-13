@@ -1,0 +1,4 @@
+# Rails regenerates these schema dumps (Solid Queue/Cache/Cable); they are not
+# hand-written code. db/schema.rb is already ignored by Standard's defaults.
+ignore:
+  - "db/*_schema.rb"

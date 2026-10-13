@@ -1,0 +1,2 @@
+class ServiceRequestsController < ::ResourceController
+end

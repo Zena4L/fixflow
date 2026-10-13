@@ -7,9 +7,9 @@ module ActiveSupport
     # Run tests in parallel with specified workers
     parallelize(workers: :number_of_processors)
 
-    # Setup all fixtures in test/fixtures/*.yml for all tests in alphabetical order.
-    fixtures :all
-
     # Add more helper methods to be used by all tests here...
   end
 end
+
+require "plutonium/testing"
+Dir[File.join(__dir__, "support/**/*.rb")].sort.each { |file| require file }
