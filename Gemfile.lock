@@ -79,6 +79,8 @@ GEM
       uri (>= 0.13.1)
     addressable (2.9.0)
       public_suffix (>= 2.0.2, < 8.0)
+    annotated (0.1.1)
+      activerecord (>= 3.2)
     ast (2.4.3)
     base64 (0.3.0)
     bcrypt_pbkdf (1.1.2)
@@ -486,6 +488,7 @@ PLATFORMS
   x86_64-linux-musl
 
 DEPENDENCIES
+  annotated (~> 0.1.1)
   bootsnap
   brakeman
   bundler-audit
