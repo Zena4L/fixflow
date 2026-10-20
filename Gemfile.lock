@@ -232,7 +232,7 @@ GEM
     nokogiri (1.19.4-x86_64-linux-musl)
       racc (~> 1.4)
     ostruct (0.6.3)
-    pagy (43.7.1)
+    pagy (43.8.1)
       json
       uri
       yaml
@@ -268,7 +268,7 @@ GEM
       fiber-local
       phlex (~> 2.0)
       zeitwerk
-    phlexi-form (0.14.3)
+    phlexi-form (0.14.4)
       activesupport
       phlex (~> 2.0)
       phlexi-field (~> 0.2.0)
@@ -283,7 +283,7 @@ GEM
       phlexi-display
       phlexi-field (~> 0.2.0)
       zeitwerk
-    plutonium (0.67.0)
+    plutonium (0.69.0)
       action_policy (~> 0.7.0)
       csv
       listen (~> 3.8)
@@ -294,7 +294,7 @@ GEM
       phlex-tabler_icons
       phlexi-display (>= 0.2.0)
       phlexi-field (>= 0.2.0)
-      phlexi-form (>= 0.14.3)
+      phlexi-form (>= 0.14.4)
       phlexi-menu (>= 0.4.1)
       phlexi-table (>= 0.2.0)
       rabl (~> 0.17.0)
@@ -544,7 +544,7 @@ DEPENDENCIES
   kamal
   letter_opener (~> 1.10)
   pg (~> 1.6)
-  plutonium (~> 0.67.0)
+  plutonium (~> 0.69.0)
   propshaft
   puma (>= 5.0)
   rails (~> 8.1.4)
